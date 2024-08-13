@@ -6,7 +6,6 @@ import com.restapi.emp.entity.Department;
 import com.restapi.emp.exception.ResourceNotFoundException;
 import com.restapi.emp.repository.DepartmentRepository;
 import com.restapi.emp.service.DepartmentService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,13 +39,18 @@ public class DepartmentServiceImpl implements DepartmentService {
 //        Department department = optional.orElseThrow(
 //                () -> new ResourceNotFoundException("Department is not exists with a given id: " + departmentId) );
 
-        String errMsg = String.format("Department is not exists with a given id: %s", departmentId);
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(errMsg, HttpStatus.NOT_FOUND)
-                );
+        Department department = EmpDeptCommon.getDepartment(departmentId, departmentRepository);
         return DepartmentMapper.mapToDepartmentDto(department);
     }
+    
+// EmpDeptCommon 클래스의 getDepartment() 메서드로 대체됨
+//    private Department getDepartment(Long departmentId) {
+//        String errMsg = String.format("Department is not exists with a given id: %s", departmentId);
+//        return departmentRepository.findById(departmentId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException(errMsg, HttpStatus.NOT_FOUND)
+//        );
+//    }
 
     @Transactional(readOnly = true)
     @Override
@@ -57,19 +61,18 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .stream()
                 .map(DepartmentMapper::mapToDepartmentDto)
                 .toList(); //Stream<DepartmentDto> => List<DepartmentDto>
-        //.map((department) -> DepartmentMapper.mapToDepartmentDto(department))
-        //.collect(Collectors.toList());
+                //.map((department) -> DepartmentMapper.mapToDepartmentDto(department))
+                //.collect(Collectors.toList());
     }
 
     @Override
     public DepartmentDto updateDepartment(Long departmentId, DepartmentDto updatedDepartment) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Department is not exists with a given id:"+ departmentId)
-                );
+        Department department = EmpDeptCommon.getDepartment(departmentId, departmentRepository);
         //Dirty Check - setter method 호출
-        department.setDepartmentName(updatedDepartment.getDepartmentName());
-        department.setDepartmentDescription(updatedDepartment.getDepartmentDescription());
+        if (updatedDepartment.getDepartmentName() != null)
+            department.setDepartmentName(updatedDepartment.getDepartmentName());
+        if (updatedDepartment.getDepartmentDescription() != null)
+            department.setDepartmentDescription(updatedDepartment.getDepartmentDescription());
 
         //Department savedDepartment = departmentRepository.save(department);
 
@@ -78,11 +81,8 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public void deleteDepartment(Long departmentId) {
-        departmentRepository.findById(departmentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Department is not exists with a given id: " + departmentId)
-                );
+        Department department = EmpDeptCommon.getDepartment(departmentId, departmentRepository);
 
-        departmentRepository.deleteById(departmentId);
+        departmentRepository.delete(department);
     }
 }
